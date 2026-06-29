@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: resume_analyzer_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: resume_analyzer_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_db:/app/app/db
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - DATABASE_PATH=/app/app/db/resume.db
+      - UPLOAD_DIR=/app/uploads
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: resume_analyzer_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  ollama_data:
+  backend_uploads:
+  backend_db:
