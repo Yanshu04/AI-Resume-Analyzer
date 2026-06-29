@@ -93,3 +93,5 @@ docker-compose up --build
 
 ### Frontend Environment Variables
 - `VITE_API_URL`: Backend API URL (defaults to `http://localhost:8000`).
+
+![Banner](dashboard_screenshot.png)
